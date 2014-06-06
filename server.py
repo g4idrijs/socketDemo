@@ -33,7 +33,7 @@ class SocketProxy(object):
 
 class ChatContent(SocketProxy):
     def parse(self,data):
-        self.chatContent = struct.unpack('s',data)[0]
+        self.chatContent = data
         print(self.chatContent)
 
 
@@ -43,7 +43,7 @@ class Connection(object):
         Connection.clients.add(self)
         self._stream = stream
         self._address = address
-        self._datas = []
+        self._datas = b''
         self._stream.set_close_callback(self.on_close)
         self.read_message()
         print("A new user has entered the chat room.", address)
@@ -55,16 +55,20 @@ class Connection(object):
         pass
 
     def stream_callback(self, data):
-        self._datas.append(data)
+        if len(self._datas) > 0:
+            self._datas = '%s%s' % (self._datas, data)
+        else:
+            self._datas = data
+
         self.parseTCPProxy()
 
     def parseTCPProxy(self):
-        sProxy = ChatContent(self._datas[0])
-        curLength = len(self._datas[0])
+        sProxy = ChatContent(self._datas)
+        curLength = len(self._datas)
         length = len(sProxy)
         while (length < curLength):
             if length == curLength:
-                self._datas = []
+                self._datas = b''
             else:
                 self._datas = self._datas[length,curLength - length]
 
